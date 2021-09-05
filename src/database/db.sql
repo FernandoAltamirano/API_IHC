@@ -65,9 +65,9 @@ DROP TABLE IF EXISTS INSCRIPCIONES;
 CREATE TABLE INSCRIPCIONES (
     id_evento INT NOT NULL,
     id_usuario INT NOT NULL,
-    fecha_inscripcion DATE NOT NULL,
     certificado TINYINT(1) NOT NULL,
     voucher VARCHAR(30) NOT NULL,
+    fecha_inscripcion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY fk_evento_id (id_evento),
     KEY fk_usuario_id (id_usuario),
     CONSTRAINT fk_evento FOREIGN KEY(id_evento) REFERENCES EVENTOS(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -80,9 +80,9 @@ DROP TABLE IF EXISTS SOLICITUDES;
 CREATE TABLE SOLICITUDES (
     id int NOT NULL AUTO_INCREMENT,
     codigo VARCHAR(10) NOT NULL UNIQUE,
-    fecha_envio DATE NOT NULL,
     estado TINYINT(1) NOT NULL,
     id_evento INT NOT NULL,
+    fecha_envio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     observaciones VARCHAR(255) NULL,
     PRIMARY KEY(id),
     KEY fk_estado_id (estado),

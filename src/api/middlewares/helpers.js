@@ -19,7 +19,7 @@ helpers.matchPassword = async (password, savedPassword) => {
 
 helpers.isLoggedIn = async (req, res, next) => {
   const token = req.headers["token"];
-  // const token = req.session.jwt;
+
   if (token) {
     try {
       const decode = await jwt.verify(token, SECRET_TOKEN);
@@ -31,13 +31,11 @@ helpers.isLoggedIn = async (req, res, next) => {
           .status(500)
           .json({ data: null, message: "The user already not exists" });
       req.user = result[0];
-      console.log(req.user);
       return next();
     } catch (err) {
-      console.log("ERROR");
+      console.log("ERROR: " + err);
     }
   } else {
-    // return res.redirect("/auth/login");
     return res.json({ data: null, message: "You don't have an authorization" });
   }
 };
@@ -46,7 +44,7 @@ helpers.isLoggedInAdmin = async (req, res, next) => {
   if (req.user.tipo_usuario === "S") {
     return next();
   } else {
-    return res.redirect("/auth/login");
+    return res.json({ data: null, message: "You are not a Admin" });
   }
 };
 

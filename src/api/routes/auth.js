@@ -7,10 +7,6 @@ const { Router } = require("express");
 //INITIALIZATION
 const router = Router();
 
-//ESTA ES LA PESTAÑA DE LOGIN
-// router.get("/login", (req, res) => {
-//   res.send("Login Page");
-// });
 
 //ESTA RUTA RECIBE LOS DATOS DEL FORMULARIO Y LOS COMPARA CON LOS DE LA BD
 router.post("/login", async (req, res) => {
@@ -24,8 +20,6 @@ router.post("/login", async (req, res) => {
     const validate = await helpers.matchPassword(password, user.password);
     if (validate) {
       const token = jwt.sign({ id: user.id }, SECRET_TOKEN);
-      req.session.jwt = token;
-      //   res.redirect("/dashboard/profile")
       return res.json({ data: token });
     } else {
       res
@@ -36,11 +30,6 @@ router.post("/login", async (req, res) => {
     res.status(400).json({ data: null, message: "Your email is not exists" });
   }
 });
-
-//ESTA ES LA PESTAÑA DE SIGNUP
-// router.get("/signup", (req, res) => {
-//   res.send("Signup Page");
-// });
 
 //RECIBE LOS DATOS DEL FORMULARIO REGISTRO USUARIO Y LOS AGREGA A LA BD
 router.post("/signup", async (req, res) => {
@@ -57,9 +46,8 @@ router.post("/signup", async (req, res) => {
 
 //LOGOUT
 router.get("/logout", (req, res) => {
+  
   req.session.destroy();
-
-  // res.redirect("/auth/login");
 });
 
 //EXPORTING AUTH ROUTES

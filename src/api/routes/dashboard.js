@@ -52,16 +52,15 @@ router.put("/profile/:id", isLoggedIn, async (req, res) => {
   await db.query("UPDATE usuarios SET ? WHERE id = ?", [newUser, id]);
 
   return res.json({ status: 200 });
-  //   res.redirect("/dashboard");
 });
 
 //ESTA ES LA RUTA PARA VER LOS EVENTO DISPONIBLES
 router.get("/events", isLoggedIn, async (req, res) => {
   const query1 =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h:%m %p') AS hora_inicio, precio_inscripcion FROM eventos GROUP BY participantes DESC";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos GROUP BY participantes";
 
   const query2 =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h:%m %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE fecha_inicio > NOW() GROUP BY fecha_inicio";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h: %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE fecha_inicio > NOW() GROUP BY fecha_inicio";
 
   const features = await db.query(query1);
 
@@ -81,7 +80,7 @@ router.get("/events/details/:id", isLoggedIn, async (req, res) => {
   const { id } = req.params;
 
   const query =
-    "SELECT e.logo AS logo_evento, e.titulo, tco.descripcion AS tipo_coordinador, e.nombre_coordinador, DATE_FORMAT(e.fecha_inicio, '%d/%m/%Y') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h:%m %p') AS hora_inicio, e.participantes, ti.descripcion AS tipo_inscripcion, e.precio_inscripcion, tc.descripcion AS tipo_certificado, e.precio_certificado, e.descripcion AS descripcion_evento, u.foto AS foto_coordinador, e.nombre_coordinador, e.img1, e.img2, e.img3 FROM eventos AS e JOIN usuarios AS u ON e.id_coordinador = u.id JOIN tipos_coordinador AS tco ON tco.id = e.tipo_coordinador JOIN tipos_inscripcion AS ti  ON ti.id = e.tipo_inscripcion JOIN tipos_certificado AS tc ON tc.id = e.tipo_certificado WHERE e.id = ?";
+    "SELECT e.logo AS logo_evento, e.titulo, tco.descripcion AS tipo_coordinador, e.nombre_coordinador, DATE_FORMAT(e.fecha_inicio, '%d/%m/%Y') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.participantes, ti.descripcion AS tipo_inscripcion, e.precio_inscripcion, tc.descripcion AS tipo_certificado, e.precio_certificado, e.descripcion AS descripcion_evento, u.foto AS foto_coordinador, e.nombre_coordinador, e.img1, e.img2, e.img3 FROM eventos AS e JOIN usuarios AS u ON e.id_coordinador = u.id JOIN tipos_coordinador AS tco ON tco.id = e.tipo_coordinador JOIN tipos_inscripcion AS ti  ON ti.id = e.tipo_inscripcion JOIN tipos_certificado AS tc ON tc.id = e.tipo_certificado WHERE e.id = ?";
 
   const rows = await db.query(query, [id]);
 
@@ -117,42 +116,46 @@ router.post(
   "/events/inscription/:id",
   isLoggedIn,
   completeUserData,
-  (req, res) => {
+  async (req, res) => {
+
     const { id } = req.params;
 
     const { certificado } = req.body;
 
-    const { voucher } = req.files;
+    let voucherName = "";
 
-    if (
-      voucher.mimetype == "image/jpeg" ||
-      voucher.mimetype == "image/png" ||
-      voucher.mimetype == "image/gif" ||
-      voucher.mimetype == "image/jpg"
-    ) {
-      foto.mv("src/images" + voucher.name, async (err) => {
-        if (err) res.status(500).json({ message: "Fail in move file" });
+    if (req.files) {
 
-        const inscription = {
-          id_evento: id,
-          id_usuario: req.user.id,
-          fecha_inscripcion: new Date(),
-          certificado,
-          voucher: voucher.name,
-        };
+      const { voucher } = req.files;
 
-        const query = "INSERT INTO inscripciones SET ?";
+      if (
+        voucher.mimetype == "image/jpeg" ||
+        voucher.mimetype == "image/png" ||
+        voucher.mimetype == "image/gif" ||
+        voucher.mimetype == "image/jpg"
+      ) {
+        foto.mv("src/images" + voucher.name, async (err) => {
+          if (err) res.status(500).json({ message: "Fail in move file" });
 
-        await db.query(query, [inscription]);
-
-        res.status(200).json({ message: "Inscription Registered" });
-      });
-    } else {
-      res.status(400).json({
-        message:
-          "This format is not allowed,please upload file with '.png','.gif','.jpeg', 'jpg'",
-      });
+          voucherName = voucher.name;
+        });
+      } else {
+        res.status(400).json({
+          message:
+            "This format is not allowed,please upload file with '.png','.gif','.jpeg', 'jpg'",
+        });
+      }
     }
+
+    const inscription = {
+      id_evento: id,
+      id_usuario: req.user.id,
+      certificado,
+      voucher: voucherName
+    };
+    const query = "INSERT INTO inscripciones SET ?";
+    await db.query(query, [inscription]);
+    res.status(200).json({ message: "Inscription Registered to this event" });
   }
 );
 
@@ -161,7 +164,7 @@ router.get("/events/title/:titulo", isLoggedIn, async (req, res) => {
   const { titulo } = req.params;
 
   const query =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h:%m %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE titulo = ?";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE titulo = ?";
 
   const rows = await db.query(query, [titulo]);
 
@@ -177,7 +180,7 @@ router.get("/events/prices/:precio1/:precio2", isLoggedIn, async (req, res) => {
   const { precio1, precio2 } = req.params;
 
   const query =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h:%m %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE precio_inscripcion BETWEEN ? AND ?";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE precio_inscripcion BETWEEN ? AND ?";
 
   const rows = await db.query(query, [precio1, precio2]);
 
@@ -193,7 +196,7 @@ router.get("/events/category/:categoria", isLoggedIn, async (req, res) => {
   const { categoria } = req.params;
 
   const query =
-    "SELECT e.id, e.titulo, e.fecha_inicio, e.hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN tipos_evento AS te ON e.tipo_evento = te.id WHERE te.id = ?";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN tipos_evento AS te ON e.tipo_evento = te.id WHERE te.id = ?";
 
   const rows = await db.query(query, [categoria]);
 
@@ -205,11 +208,11 @@ router.get("/events/category/:categoria", isLoggedIn, async (req, res) => {
 });
 
 //ESTA RUTA MUESTRA LOS EVENTOS SEGUN LA FECHA
-router.get("/events/dates/:fech1/:fecha2", isLoggedIn, async (req, res) => {
+router.get("/events/dates/:fecha1/:fecha2", isLoggedIn, async (req, res) => {
   const { fecha1, fecha2 } = req.params;
 
   const query =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h:%m %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE fecha_inicio BETWEEN cast(? AS date) AND cast(? as date) GROUP BY fecha_inicio";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE fecha_inicio BETWEEN cast(? AS date) AND cast(? as date) GROUP BY fecha_inicio";
 
   const rows = await db.query(query, [fecha1, fecha2]);
 
@@ -225,7 +228,7 @@ router.get("/myevents", isLoggedIn, async (req, res) => {
   const { id } = req.user;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h:%m %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ?";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ?";
 
   const closeOnes = await db.query(query, [id]);
 
@@ -256,7 +259,7 @@ router.get("/myevents/title/:titulo", isLoggedIn, async (req, res) => {
   const { titulo } = req.params;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h:%m %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND e.titulo = ?";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND e.titulo = ?";
 
   const rows = await db.query(query, [req.user.id, titulo]);
 
@@ -268,14 +271,11 @@ router.get("/myevents/title/:titulo", isLoggedIn, async (req, res) => {
 });
 
 //ESTA RUTA MUESTRA LOS EVENTOS SEGUN EL PRECIO
-router.get(
-  "/myevents/prices/:precio1/:precio2",
-  isLoggedIn,
-  async (req, res) => {
+router.get("/myevents/prices/:precio1/:precio2", isLoggedIn, async (req, res) => {
     const { precio1, precio2 } = req.params;
 
     const query =
-      "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h:%m %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND e.precio_inscripcion BETWEEN ? AND ?";
+      "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND e.precio_inscripcion BETWEEN ? AND ?";
 
     const rows = await db.query(query, [req.user.id, precio1, precio2]);
 
@@ -292,7 +292,7 @@ router.get("/myevents/category/:categoria", isLoggedIn, async (req, res) => {
   const { categoria } = req.params;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h:%m %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id JOIN tipos_evento AS te ON e.tipo_evento = te.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND te.id = ?";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id JOIN tipos_evento AS te ON e.tipo_evento = te.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND te.id = ?";
 
   const rows = await db.query(query, [req.user.id, categoria]);
 
@@ -304,11 +304,11 @@ router.get("/myevents/category/:categoria", isLoggedIn, async (req, res) => {
 });
 
 //ESTA RUTA MUESTRA LOS EVENTOS SEGUN LA FECHA
-router.get("/myevents/dates/:fech1/:fecha2", isLoggedIn, async (req, res) => {
+router.get("/myevents/dates/:fecha1/:fecha2", isLoggedIn, async (req, res) => {
   const { fecha1, fecha2 } = req.params;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h:%m %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE fecha_inicio > NOW() AND u.id = ? AND e.fecha_inicio cast(? AS date) AND cast(? as date) GROUP BY fecha_inicio";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE fecha_inicio > NOW() AND u.id = ? AND e.fecha_inicio cast(? AS date) AND cast(? as date) GROUP BY fecha_inicio";
 
   const rows = await db.query(query, [req.user.id, fecha1, fecha2]);
 
@@ -320,7 +320,7 @@ router.get("/myevents/dates/:fech1/:fecha2", isLoggedIn, async (req, res) => {
 });
 
 //ESTA RUTA ES PARA REGISTRAR UN EVENTO
-router.post("/events/register", isLoggedIn, (req, res) => {
+router.post("/events/register", isLoggedIn, async (req, res) => {
   const id_coordinador = req.user.id;
 
   const {
@@ -341,123 +341,130 @@ router.post("/events/register", isLoggedIn, (req, res) => {
     participantes,
   } = req.body;
 
-  const { logo, img1, img2, img3 } = req.files;
+  let logoName = "", img1Name = "", img2Name = "", img3Name = "";
 
-  if (
-    logo.mimetype == "image/jpeg" ||
-    logo.mimetype == "image/png" ||
-    logo.mimetype == "image/gif" ||
-    logo.mimetype == "image/jpg"
-  ) {
+  if (req.files) {
+
+    const { logo, img1, img2, img3 } = req.files;
+
     if (
-      img1.mimetype == "image/jpeg" ||
-      img1.mimetype == "image/png" ||
-      img1.mimetype == "image/gif" ||
-      img1.mimetype == "image/jpg"
+      logo.mimetype == "image/jpeg" ||
+      logo.mimetype == "image/png" ||
+      logo.mimetype == "image/gif" ||
+      logo.mimetype == "image/jpg"
     ) {
       if (
-        img2.mimetype == "image/jpeg" ||
-        img2.mimetype == "image/png" ||
-        img2.mimetype == "image/gif" ||
-        img2.mimetype == "image/jpg"
+        img1.mimetype == "image/jpeg" ||
+        img1.mimetype == "image/png" ||
+        img1.mimetype == "image/gif" ||
+        img1.mimetype == "image/jpg"
       ) {
         if (
-          img3.mimetype == "image/jpeg" ||
-          img3.mimetype == "image/png" ||
-          img3.mimetype == "image/gif" ||
-          img3.mimetype == "image/jpg"
+          img2.mimetype == "image/jpeg" ||
+          img2.mimetype == "image/png" ||
+          img2.mimetype == "image/gif" ||
+          img2.mimetype == "image/jpg"
         ) {
-          logo.mv("src/images" + logo.name, async (err) => {
-            if (err)
-              res.status(500).json({ message: "Fail in move file logo" });
-
-            img1.mv("src/images" + img1.name, async (err) => {
+          if (
+            img3.mimetype == "image/jpeg" ||
+            img3.mimetype == "image/png" ||
+            img3.mimetype == "image/gif" ||
+            img3.mimetype == "image/jpg"
+          ) {
+            logo.mv("src/images" + logo.name, async (err) => {
               if (err)
-                res.status(500).json({ message: "Fail in move file img1" });
-
-              img2.mv("src/images" + img2.name, async (err) => {
+                res.status(500).json({ message: "Fail in move file logo" });
+  
+              img1.mv("src/images" + img1.name, async (err) => {
                 if (err)
-                  res.status(500).json({ message: "Fail in move file img2" });
-
-                img3.mv("src/images" + img3.name, async (err) => {
+                  res.status(500).json({ message: "Fail in move file img1" });
+  
+                img2.mv("src/images" + img2.name, async (err) => {
                   if (err)
-                    res.status(500).json({ message: "Fail in move file img3" });
+                    res.status(500).json({ message: "Fail in move file img2" });
+  
+                  img3.mv("src/images" + img3.name, async (err) => {
+                    if (err)
+                      res.status(500).json({ message: "Fail in move file img3" });
+  
+                    logoName = logo.name;
 
-                  img1.mv("src/images" + img1.name);
+                    img1Name = img1.name;
 
-                  img2.mv("src/images" + img2.name);
+                    img2Name = img2.name;
 
-                  img3.mv("src/images" + img3.name);
-
-                  const newEvent = {
-                    titulo,
-                    tipo_coordinador,
-                    nombre_coordinador,
-                    id_coordinador,
-                    tipo_evento,
-                    fecha_inicio,
-                    fecha_fin,
-                    hora_inicio,
-                    duracion,
-                    tipo_inscripcion,
-                    precio_inscripcion,
-                    descripcion,
-                    tipo_certificado,
-                    precio_certificado,
-                    tipo_ambiente,
-                    participantes,
-                    logo: logo.name,
-                    img1: img1.name,
-                    img2: img2.name,
-                    img3: img3.name,
-                  };
-
-                  const result = await db.query("INSERT INTO eventos SET ?", [
-                    newEvent,
-                  ]);
-
-                  const codigoRequest = "FISI-2021005242" + result.insertId;
-
-                  const newRequest = {
-                    codigo: codigoRequest,
-                    fecha_envio: new Date(),
-                    estado: 2,
-                    id_evento: result.insertId,
-                  };
-
-                  await db.query("INSERT INTO solicitudes SET", [newRequest]);
-
-                  res
-                    .status(200)
-                    .json({ message: "Event Registered and Request Created" });
+                    img3Name = img3.name;
+                  });
                 });
               });
             });
-          });
+          } else {
+            res.status(400).json({
+              message:
+                "This format is not allowed on img3,please upload file with '.png','.gif','.jpeg', 'jpg'",
+            });
+          }
         } else {
           res.status(400).json({
             message:
-              "This format is not allowed on img3,please upload file with '.png','.gif','.jpeg', 'jpg'",
+              "This format is not allowed on img2,please upload file with '.png','.gif','.jpeg', 'jpg'",
           });
         }
       } else {
         res.status(400).json({
           message:
-            "This format is not allowed on img2,please upload file with '.png','.gif','.jpeg', 'jpg'",
+            "This format is not allowed on img1,please upload file with '.png','.gif','.jpeg', 'jpg'",
         });
       }
     } else {
       res.status(400).json({
         message:
-          "This format is not allowed on img1,please upload file with '.png','.gif','.jpeg', 'jpg'",
+          "This format is not allowed on logo,please upload file with '.png','.gif','.jpeg', 'jpg'",
       });
     }
-  } else {
-    res.status(400).json({
-      message:
-        "This format is not allowed on logo,please upload file with '.png','.gif','.jpeg', 'jpg'",
-    });
+
   }
+
+  const newEvent = {
+    titulo,
+    tipo_coordinador,
+    nombre_coordinador,
+    id_coordinador,
+    tipo_evento,
+    fecha_inicio,
+    fecha_fin,
+    hora_inicio,
+    duracion,
+    tipo_inscripcion,
+    precio_inscripcion,
+    descripcion,
+    tipo_certificado,
+    precio_certificado,
+    tipo_ambiente,
+    participantes,
+    logo: logoName,
+    img1: img1Name,
+    img2: img2Name,
+    img3: img3Name,
+  };
+
+  const result = await db.query("INSERT INTO eventos SET ?", [
+    newEvent,
+  ]);
+
+  const codigoRequest = "FISI2021" + result.insertId;
+
+  const newRequest = {
+    codigo: codigoRequest,
+    estado: 2,
+    id_evento: result.insertId,
+  };
+
+  await db.query("INSERT INTO solicitudes SET", [newRequest]);
+
+  res
+    .status(200)
+    .json({ message: "Event Registered and Request Created" });
 });
 
 //ESTA ES LA RUTA DONDE VEO MIS SOLICITUDES
