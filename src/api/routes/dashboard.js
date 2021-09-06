@@ -57,10 +57,10 @@ router.put("/profile/:id", isLoggedIn, async (req, res) => {
 //ESTA ES LA RUTA PARA VER LOS EVENTO DISPONIBLES
 router.get("/events", isLoggedIn, async (req, res) => {
   const query1 =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos GROUP BY participantes";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos GROUP BY participantes";
 
   const query2 =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h: %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE fecha_inicio > NOW() GROUP BY fecha_inicio";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h: %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE fecha_inicio > NOW() GROUP BY fecha_inicio";
 
   const features = await db.query(query1);
 
@@ -162,7 +162,7 @@ router.get("/events/title/:titulo", isLoggedIn, async (req, res) => {
   const { titulo } = req.params;
 
   const query =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE titulo = ?";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE titulo = ?";
 
   const rows = await db.query(query, [titulo]);
 
@@ -178,7 +178,7 @@ router.get("/events/prices/:precio1/:precio2", isLoggedIn, async (req, res) => {
   const { precio1, precio2 } = req.params;
 
   const query =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE precio_inscripcion BETWEEN ? AND ?";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE precio_inscripcion BETWEEN ? AND ?";
 
   const rows = await db.query(query, [precio1, precio2]);
 
@@ -194,7 +194,7 @@ router.get("/events/category/:categoria", isLoggedIn, async (req, res) => {
   const { categoria } = req.params;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN tipos_evento AS te ON e.tipo_evento = te.id WHERE te.id = ?";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN tipos_evento AS te ON e.tipo_evento = te.id WHERE te.id = ?";
 
   const rows = await db.query(query, [categoria]);
 
@@ -210,7 +210,7 @@ router.get("/events/dates/:fecha1/:fecha2", isLoggedIn, async (req, res) => {
   const { fecha1, fecha2 } = req.params;
 
   const query =
-    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE fecha_inicio BETWEEN cast(? AS date) AND cast(? as date) GROUP BY fecha_inicio";
+    "SELECT id, titulo, DATE_FORMAT(fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(hora_inicio, '%h %p') AS hora_inicio, precio_inscripcion FROM eventos WHERE fecha_inicio BETWEEN cast(? AS date) AND cast(? as date) GROUP BY fecha_inicio";
 
   const rows = await db.query(query, [fecha1, fecha2]);
 
@@ -226,7 +226,7 @@ router.get("/myevents", isLoggedIn, async (req, res) => {
   const { id } = req.user;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ?";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ?";
 
   const closeOnes = await db.query(query, [id]);
 
@@ -257,7 +257,7 @@ router.get("/myevents/title/:titulo", isLoggedIn, async (req, res) => {
   const { titulo } = req.params;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND e.titulo = ?";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND e.titulo = ?";
 
   const rows = await db.query(query, [req.user.id, titulo]);
 
@@ -276,7 +276,7 @@ router.get(
     const { precio1, precio2 } = req.params;
 
     const query =
-      "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND e.precio_inscripcion BETWEEN ? AND ?";
+      "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND e.precio_inscripcion BETWEEN ? AND ?";
 
     const rows = await db.query(query, [req.user.id, precio1, precio2]);
 
@@ -293,7 +293,7 @@ router.get("/myevents/category/:categoria", isLoggedIn, async (req, res) => {
   const { categoria } = req.params;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id JOIN tipos_evento AS te ON e.tipo_evento = te.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND te.id = ?";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id JOIN tipos_evento AS te ON e.tipo_evento = te.id WHERE e.fecha_inicio > NOW() AND u.id = ? AND te.id = ?";
 
   const rows = await db.query(query, [req.user.id, categoria]);
 
@@ -309,7 +309,7 @@ router.get("/myevents/dates/:fecha1/:fecha2", isLoggedIn, async (req, res) => {
   const { fecha1, fecha2 } = req.params;
 
   const query =
-    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE fecha_inicio > NOW() AND u.id = ? AND e.fecha_inicio cast(? AS date) AND cast(? as date) GROUP BY fecha_inicio";
+    "SELECT e.id, e.titulo, DATE_FORMAT(e.fecha_inicio, '%W, %d de %M del %m') AS fecha_inicio, DATE_FORMAT(e.hora_inicio, '%h %p') AS hora_inicio, e.precio_inscripcion FROM eventos AS e JOIN inscripciones AS i ON i.id_evento = e.id JOIN usuarios AS u ON i.id_usuario = u.id WHERE fecha_inicio > NOW() AND u.id = ? AND e.fecha_inicio cast(? AS date) AND cast(? as date) GROUP BY fecha_inicio";
 
   const rows = await db.query(query, [req.user.id, fecha1, fecha2]);
 
