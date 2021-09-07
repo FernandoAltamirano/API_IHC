@@ -7,7 +7,6 @@ const { Router } = require("express");
 //INITIALIZATION
 const router = Router();
 
-
 //ESTA RUTA RECIBE LOS DATOS DEL FORMULARIO Y LOS COMPARA CON LOS DE LA BD
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -46,7 +45,6 @@ router.post("/signup", async (req, res) => {
 
 //LOGOUT
 router.get("/logout", (req, res) => {
-  
   req.session.destroy();
 });
 

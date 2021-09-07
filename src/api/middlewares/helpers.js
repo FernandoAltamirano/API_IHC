@@ -34,6 +34,7 @@ helpers.isLoggedIn = async (req, res, next) => {
       return next();
     } catch (err) {
       console.log("ERROR: " + err);
+      return res.json({ data: null });
     }
   } else {
     return res.json({ data: null, message: "You don't have an authorization" });
