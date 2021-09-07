@@ -7,7 +7,7 @@ const router = Router();
 
 //ESTA ES LA PÁGINA PRINCIPAL DEL DASHBOARD
 router.get("/profile", isLoggedIn, (req, res) => {
-  res
+  return res
     .status(200)
     .json({ message: "Welcome to your Dashboard", data: req.user });
 });
@@ -27,7 +27,7 @@ router.put("/profile/:id", isLoggedIn, async (req, res) => {
       foto.mimetype == "image/jpg"
     ) {
       foto.mv("src/images" + foto.name, async (err) => {
-        if (err) res.status(500).json({ message: "Fail in move file" });
+        if (err) return res.status(500).json({ message: "Fail in move file" });
         fotoName = foto.name;
       });
     } else {
@@ -85,9 +85,9 @@ router.get("/events/details/:id", isLoggedIn, async (req, res) => {
   const rows = await db.query(query, [id]);
 
   if (rows.length > 0) {
-    res.status(200).json({ result: rows });
+    res.status(200).json({ data: rows });
   } else {
-    res.status(400).json({ message: "Not found events" });
+    res.status(400).json({ data: null, message: "Not found events" });
   }
 });
 
@@ -117,7 +117,6 @@ router.post(
   isLoggedIn,
   completeUserData,
   async (req, res) => {
-
     const { id } = req.params;
 
     const { certificado } = req.body;
@@ -125,7 +124,6 @@ router.post(
     let voucherName = "";
 
     if (req.files) {
-
       const { voucher } = req.files;
 
       if (
@@ -151,7 +149,7 @@ router.post(
       id_evento: id,
       id_usuario: req.user.id,
       certificado,
-      voucher: voucherName
+      voucher: voucherName,
     };
     const query = "INSERT INTO inscripciones SET ?";
     await db.query(query, [inscription]);
@@ -264,14 +262,17 @@ router.get("/myevents/title/:titulo", isLoggedIn, async (req, res) => {
   const rows = await db.query(query, [req.user.id, titulo]);
 
   if (rows.length > 0) {
-    res.status(200).json({ result: rows });
+    res.status(200).json({ data: rows });
   } else {
     res.status(400).json({ message: "Not found events with this title" });
   }
 });
 
 //ESTA RUTA MUESTRA LOS EVENTOS SEGUN EL PRECIO
-router.get("/myevents/prices/:precio1/:precio2", isLoggedIn, async (req, res) => {
+router.get(
+  "/myevents/prices/:precio1/:precio2",
+  isLoggedIn,
+  async (req, res) => {
     const { precio1, precio2 } = req.params;
 
     const query =
@@ -341,10 +342,12 @@ router.post("/events/register", isLoggedIn, async (req, res) => {
     participantes,
   } = req.body;
 
-  let logoName = "", img1Name = "", img2Name = "", img3Name = "";
+  let logoName = "",
+    img1Name = "",
+    img2Name = "",
+    img3Name = "";
 
   if (req.files) {
-
     const { logo, img1, img2, img3 } = req.files;
 
     if (
@@ -374,19 +377,21 @@ router.post("/events/register", isLoggedIn, async (req, res) => {
             logo.mv("src/images" + logo.name, async (err) => {
               if (err)
                 res.status(500).json({ message: "Fail in move file logo" });
-  
+
               img1.mv("src/images" + img1.name, async (err) => {
                 if (err)
                   res.status(500).json({ message: "Fail in move file img1" });
-  
+
                 img2.mv("src/images" + img2.name, async (err) => {
                   if (err)
                     res.status(500).json({ message: "Fail in move file img2" });
-  
+
                   img3.mv("src/images" + img3.name, async (err) => {
                     if (err)
-                      res.status(500).json({ message: "Fail in move file img3" });
-  
+                      res
+                        .status(500)
+                        .json({ message: "Fail in move file img3" });
+
                     logoName = logo.name;
 
                     img1Name = img1.name;
@@ -422,7 +427,6 @@ router.post("/events/register", isLoggedIn, async (req, res) => {
           "This format is not allowed on logo,please upload file with '.png','.gif','.jpeg', 'jpg'",
       });
     }
-
   }
 
   const newEvent = {
@@ -448,9 +452,7 @@ router.post("/events/register", isLoggedIn, async (req, res) => {
     img3: img3Name,
   };
 
-  const result = await db.query("INSERT INTO eventos SET ?", [
-    newEvent,
-  ]);
+  const result = await db.query("INSERT INTO eventos SET ?", [newEvent]);
 
   const codigoRequest = "FISI2021" + result.insertId;
 
@@ -462,9 +464,7 @@ router.post("/events/register", isLoggedIn, async (req, res) => {
 
   await db.query("INSERT INTO solicitudes SET", [newRequest]);
 
-  res
-    .status(200)
-    .json({ message: "Event Registered and Request Created" });
+  res.status(200).json({ message: "Event Registered and Request Created" });
 });
 
 //ESTA ES LA RUTA DONDE VEO MIS SOLICITUDES
@@ -477,7 +477,7 @@ router.get("/myrequests", isLoggedIn, async (req, res) => {
   const rows = await db.query(query, [id]);
 
   if (rows.length > 0) {
-    res.status(200).json({ request: rows });
+    res.status(200).json({ data: rows });
   } else {
     res.status(400).json({ message: "Not found requests" });
   }
